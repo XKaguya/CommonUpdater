@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Reflection;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
@@ -6,7 +7,7 @@ class CommonUpdater
 {
     private static readonly string LogFilePath = "CommonUpdater.log";
     private static readonly string ServerUrl = "SERVER_ADDRESS";
-    private static readonly string ProgramVersion = "1.0.0";
+    private static readonly string ProgramVersion = "1.0.1";
     private const int MaxRetryCount = 3;
 
     public static async Task Main(string[] args)
@@ -14,6 +15,8 @@ class CommonUpdater
         Log($"CommonUpdater version: {ProgramVersion}");
         
         await File.WriteAllTextAsync(LogFilePath, string.Empty);
+        
+        await SelfUpdateAsync();
         
         try
         {
@@ -54,7 +57,8 @@ class CommonUpdater
 
             KillExistingInstances(projectExeName);
 
-            ReplaceOldFile(projectCurrentExePath, projectNewExePath);
+            string tempDir = Path.GetTempPath();
+            ExtractAndRunUpdaterHelper(0, tempDir, projectCurrentExePath, projectNewExePath);
 
             Process.Start(projectCurrentExePath);
             
@@ -116,7 +120,7 @@ class CommonUpdater
         {
             using HttpClient httpClient = new HttpClient();
 
-            var url = ServerUrl + "Versions.json";
+            var url = $"{ServerUrl}/Versions.json";
         
             HttpResponseMessage response = await httpClient.GetAsync(url);
             
@@ -250,24 +254,6 @@ class CommonUpdater
         }
     }
 
-    private static void ReplaceOldFile(string projectCurrentExePath, string projectNewExePath)
-    {
-        try
-        {
-            if (File.Exists(projectCurrentExePath))
-            {
-                File.Delete(projectCurrentExePath);
-            }
-
-            File.Move(projectNewExePath, projectCurrentExePath);
-            Log("Replaced old file with new version.");
-        }
-        catch (Exception ex)
-        {
-            Log($"Error replacing old file: {ex.Message}");
-        }
-    }
-
     private static void Log(string message)
     {
         string logMessage = $"{DateTime.Now:yyyy-MM-dd HH:mm:ss} - {message}";
@@ -280,6 +266,75 @@ class CommonUpdater
         catch (Exception ex)
         {
             Console.WriteLine($"Failed to write log to file: {ex.Message}");
+        }
+    }
+    
+    private static void ExtractAndRunUpdaterHelper(int pid, string tempDir, string projectCurrentExePath, string projectNewExePath)
+    {
+        string helperResourceName = "CommonUpdater.UpdaterHelper.exe";
+        string helperPath = Path.Combine(tempDir, "UpdaterHelper.exe");
+
+        try
+        {
+            using (var resourceStream = Assembly.GetExecutingAssembly().GetManifestResourceStream(helperResourceName))
+            {
+                if (resourceStream == null)
+                    throw new Exception("Failed to load embedded UpdaterHelper.exe.");
+
+                using (var fileStream = new FileStream(helperPath, FileMode.Create, FileAccess.Write))
+                {
+                    resourceStream.CopyTo(fileStream);
+                }
+            }
+            
+            var processStartInfo = new ProcessStartInfo
+            {
+                FileName = helperPath,
+                Arguments = $"\"{pid}\" \"{projectCurrentExePath}\" \"{projectNewExePath}\"",
+                UseShellExecute = false
+            };
+
+            using (var process = Process.Start(processStartInfo))
+            {
+                if (process == null)
+                    throw new Exception("Failed to start UpdaterHelper.exe.");
+
+                process.WaitForExit();
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Exception: {ex.Message}");
+            Console.WriteLine($"Helper path: {helperPath}");
+        }
+    }
+    
+    private static async Task SelfUpdateAsync()
+    {
+        var newestVersion = await GetLatestVersionWithRetryAsync("CommonUpdater", "Xkaguya");
+
+        var currentVersion = Version.Parse(ProgramVersion);
+        var newVersion = Version.Parse(newestVersion);
+
+        if (currentVersion == newVersion)
+        {
+            Log("You are already using the latest version of CommonUpdater.");
+            return;
+        }
+        if (currentVersion > newVersion)
+        {
+            Log("You are using a testing version of CommonUpdater.");
+            return;
+        }
+        
+        string selfUpdatePath = "CommonUpdater_New.exe";
+        string selfUpdatePathOld = "CommonUpdater.exe";
+        await DownloadFileWithRetryAsync("CommonUpdater", "CommonUpdater.exe", "Xkaguya", selfUpdatePath);
+
+        if (File.Exists(selfUpdatePath))
+        {
+            ExtractAndRunUpdaterHelper(Process.GetCurrentProcess().Id ,Path.GetTempPath(), selfUpdatePathOld, selfUpdatePath);
+            Environment.Exit(0);
         }
     }
 }
