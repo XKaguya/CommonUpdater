@@ -7,7 +7,7 @@ class CommonUpdater
 {
     private static readonly string LogFilePath = "CommonUpdater.log";
     private static readonly string ServerUrl = "SERVER_ADDRESS";
-    private static readonly string ProgramVersion = "1.0.1";
+    private static readonly string ProgramVersion = "1.0.2";
     private const int MaxRetryCount = 3;
 
     public static async Task Main(string[] args)
@@ -121,6 +121,8 @@ class CommonUpdater
             using HttpClient httpClient = new HttpClient();
 
             var url = $"{ServerUrl}/Versions.json";
+            
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("CommonUpdater");
         
             HttpResponseMessage response = await httpClient.GetAsync(url);
             
@@ -183,6 +185,7 @@ class CommonUpdater
 
             string url = $"{ServerUrl}/{projectName}/{projectExeName}";
             using HttpClient httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd("CommonUpdater");
             
             Log($"Downloading the newest exe from {url}");
 
