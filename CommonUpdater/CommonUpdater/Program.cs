@@ -124,7 +124,7 @@ class Program
 
             var url = $"{ServerUrl}/Versions.json";
             
-            string userAgent = $"CommonUpdater-{(_projectInfo?.ProjectName ?? "Null")}-{(_projectInfo?.ProjectCurrentVersion ?? "Null")}";
+            string userAgent = $"CommonUpdater-{(string.IsNullOrEmpty(_projectInfo?.ProjectName) ? "Null" : _projectInfo.ProjectName)}-{(string.IsNullOrEmpty(_projectInfo?.ProjectCurrentVersion) ? "Null" : _projectInfo.ProjectCurrentVersion)}";
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             
             HttpResponseMessage response = await httpClient.GetAsync(url);
@@ -188,7 +188,7 @@ class Program
 
             string url = $"{ServerUrl}/{projectName}/{projectExeName}";
             using HttpClient httpClient = new HttpClient();
-            string userAgent = $"CommonUpdater-{(_projectInfo?.ProjectName ?? "Null")}-{(_projectInfo?.ProjectCurrentVersion ?? "Null")}";
+            string userAgent = $"CommonUpdater-{(string.IsNullOrEmpty(_projectInfo?.ProjectName) ? "Null" : _projectInfo.ProjectName)}-{(string.IsNullOrEmpty(_projectInfo?.ProjectCurrentVersion) ? "Null" : _projectInfo.ProjectCurrentVersion)}";
             httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             
             Log($"Downloading the newest exe from {url}");
