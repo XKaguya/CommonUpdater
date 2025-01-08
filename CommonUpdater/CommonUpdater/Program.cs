@@ -1,14 +1,16 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
+using CommonUpdater;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 
-class CommonUpdater
+class Program
 {
     private static readonly string LogFilePath = "CommonUpdater.log";
     private static readonly string ServerUrl = "SERVER_ADDRESS";
-    private static readonly string ProgramVersion = "1.0.3";
+    private static readonly string ProgramVersion = "1.0.4";
     private const int MaxRetryCount = 3;
+    private static ProjectInfo _projectInfo = new();
 
     public static async Task Main(string[] args)
     {
@@ -25,17 +27,17 @@ class CommonUpdater
                 Log("Usage: CommonUpdater <projectName> <projectExeName> <projectAuthor> <projectCurrentVersion> <projectCurrentExePath> <projectNewExePath>");
                 return;
             }
+            
+            _projectInfo.ProjectName = args[0];
+            _projectInfo.ProjectExeName = args[1];
+            _projectInfo.ProjectAuthor = args[2];
+            _projectInfo.ProjectCurrentVersion = args[3];
+            _projectInfo.ProjectCurrentExePath = args[4];
+            _projectInfo.ProjectNewExePath = args[5];
 
-            string projectName = args[0];
-            string projectExeName = args[1];
-            string projectAuthor = args[2];
-            string projectCurrentVersion = args[3];
-            string projectCurrentExePath = args[4];
-            string projectNewExePath = args[5];
+            var newestVersion = await GetLatestVersionWithRetryAsync(_projectInfo.ProjectName, _projectInfo.ProjectAuthor);
 
-            var newestVersion = await GetLatestVersionWithRetryAsync(projectName, projectAuthor);
-
-            var currentVersion = Version.Parse(projectCurrentVersion);
+            var currentVersion = Version.Parse(_projectInfo.ProjectCurrentVersion);
             var newVersion = Version.Parse(newestVersion);
 
             if (currentVersion == newVersion)
@@ -53,14 +55,14 @@ class CommonUpdater
             
             Log($"Program current version: {currentVersion}");
 
-            await DownloadFileWithRetryAsync(projectName, projectExeName, projectAuthor, projectNewExePath);
+            await DownloadFileWithRetryAsync(_projectInfo.ProjectName, _projectInfo.ProjectExeName, _projectInfo.ProjectAuthor, _projectInfo.ProjectNewExePath);
 
-            KillExistingInstances(projectExeName);
+            KillExistingInstances(_projectInfo.ProjectExeName);
 
             string tempDir = Path.GetTempPath();
-            ExtractAndRunUpdaterHelper(0, tempDir, projectCurrentExePath, projectNewExePath);
+            ExtractAndRunUpdaterHelper(0, tempDir, _projectInfo.ProjectCurrentExePath, _projectInfo.ProjectNewExePath);
 
-            Process.Start(projectCurrentExePath);
+            Process.Start(_projectInfo.ProjectCurrentExePath);
             
             Log("Project update successfully.");
             
@@ -122,8 +124,9 @@ class CommonUpdater
 
             var url = $"{ServerUrl}/Versions.json";
             
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"CommonUpdater-{projectName}");
-        
+            string userAgent = $"CommonUpdater-{(_projectInfo?.ProjectName ?? "Null")}-{(_projectInfo?.ProjectCurrentVersion ?? "Null")}";
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
+            
             HttpResponseMessage response = await httpClient.GetAsync(url);
             
             response.EnsureSuccessStatusCode();
@@ -185,7 +188,8 @@ class CommonUpdater
 
             string url = $"{ServerUrl}/{projectName}/{projectExeName}";
             using HttpClient httpClient = new HttpClient();
-            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd($"CommonUpdater-{projectName}");
+            string userAgent = $"CommonUpdater-{(_projectInfo?.ProjectName ?? "Null")}-{(_projectInfo?.ProjectCurrentVersion ?? "Null")}";
+            httpClient.DefaultRequestHeaders.UserAgent.ParseAdd(userAgent);
             
             Log($"Downloading the newest exe from {url}");
 
