@@ -7,4 +7,14 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+      <PackageReference Include="log4net" Version="3.0.3" />
+      <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="log4net.config" />
+      <EmbeddedResource Include="log4net.config" />
+    </ItemGroup>
+
 </Project>

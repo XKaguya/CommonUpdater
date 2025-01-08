@@ -1,6 +1,6 @@
 ﻿using System.Text;
 
-namespace CommonUpdater
+namespace UpdaterHelper
 {
     public class ProjectInfo
     {
