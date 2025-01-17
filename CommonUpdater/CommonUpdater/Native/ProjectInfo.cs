@@ -1,12 +1,13 @@
 ﻿using System.Text;
 
-namespace UpdaterHelper
+namespace CommonUpdater.Native
 {
     public class ProjectInfo
     {
         public string ProjectName { get; set; } = String.Empty;
         public string ProjectExeName { get; set; } = String.Empty;
         public string ProjectAuthor { get; set; } = String.Empty;
+        // Now I see that inserting a column into a struct is not straightforward.
         // public string ProjectBranch { get; set; } = String.Empty;
         public string ProjectCurrentVersion { get; set; } = String.Empty;
         public string ProjectCurrentExePath { get; set; } = String.Empty;
