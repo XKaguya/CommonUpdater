@@ -8,15 +8,11 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <EmbeddedResource Include="UpdaterHelper.exe" />
-      <None Remove="log4net.config" />
-      <EmbeddedResource Include="log4net.config" />
+        <PackageReference Include="Newtonsoft.Json" Version="13.0.3"/>
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="log4net" Version="3.0.3" />
-      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
-      <PackageReference Include="YamlDotNet" Version="16.3.0" />
+      <EmbeddedResource Include="UpdaterHelper.exe" />
     </ItemGroup>
 
 </Project>
