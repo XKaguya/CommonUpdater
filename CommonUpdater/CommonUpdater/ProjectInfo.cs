@@ -7,9 +7,12 @@ namespace CommonUpdater
         public string ProjectName { get; set; } = String.Empty;
         public string ProjectExeName { get; set; } = String.Empty;
         public string ProjectAuthor { get; set; } = String.Empty;
+        // Now I see that inserting a column into a struct is not straightforward.
+        public string ProjectBranch { get; set; } = String.Empty;
         public string ProjectCurrentVersion { get; set; } = String.Empty;
         public string ProjectCurrentExePath { get; set; } = String.Empty;
         public string ProjectNewExePath { get; set; } = String.Empty;
+        public string ProjectNewVersion { get; set; } = String.Empty;
 
         public override string ToString()
         {
